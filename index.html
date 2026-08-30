@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC Toplama Sihirbazı</title>
+<style>
+:root{
+  --bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2a2f3a;--txt:#e6e8ee;--mut:#8b93a5;
+  --acc:#4f8cff;--acc2:#7cc4ff;--ok:#3ccf8e;--warn:#f5b642;--t1:#ff6b6b;--t2:#f5b642;--t3:#3ccf8e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+a{color:var(--acc2)}
+header{padding:22px 24px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#151923,var(--bg))}
+header h1{margin:0;font-size:22px;letter-spacing:.2px}
+header p{margin:4px 0 0;color:var(--mut);font-size:13px}
+.wrap{display:grid;grid-template-columns:1fr 360px;gap:20px;padding:20px 24px;max-width:1400px;margin:0 auto}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.preset{border:1px solid var(--line);background:var(--panel);color:var(--txt);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;flex-direction:column;align-items:flex-start;min-width:150px;transition:.15s}
+.preset small{color:var(--mut);font-size:12px}
+.preset.active{border-color:var(--acc);background:#1b2438;box-shadow:0 0 0 1px var(--acc) inset}
+.cat{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.cat-h{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:var(--panel2);border-bottom:1px solid var(--line)}
+.cat-h h2{margin:0;font-size:15px;font-weight:600}
+.cat-h .sel{color:var(--mut);font-size:13px}
+.opt{display:grid;grid-template-columns:22px 1fr auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;align-items:start}
+.opt:last-child{border-bottom:0}
+.opt:hover{background:#1b1f28}
+.opt.on{background:#182238}
+.opt input{margin:3px 0 0;accent-color:var(--acc)}
+.opt .nm{font-weight:500;font-size:14px}
+.opt .meta{color:var(--mut);font-size:12.5px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.opt .pr{font-weight:600;font-size:15px;text-align:right;white-space:nowrap}
+.opt .pr small{display:block;color:var(--mut);font-weight:400;font-size:12px}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
+.b1{border-color:var(--t1);color:var(--t1)}.b2{border-color:var(--t2);color:var(--t2)}.b3{border-color:var(--t3);color:var(--t3)}
+.opt.skip .nm{color:var(--mut);font-style:italic}
+aside{position:sticky;top:16px;align-self:start}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.total{font-size:30px;font-weight:700;letter-spacing:-.5px}
+.total-l{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.6px}
+.bd{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.bd td{padding:5px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+.bd td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bd td:first-child{color:var(--mut);width:82px}
+.bd .n{color:var(--txt);font-size:12px;display:block;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd small{display:none}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+button.b{border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:10px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500}
+button.b:hover{border-color:var(--acc)}
+button.b.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.b.wa{background:#1f8a4c;border-color:#1f8a4c;color:#fff}
+textarea{width:100%;min-height:70px;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;resize:vertical}
+.cmp{width:100%;border-collapse:collapse;font-size:12.5px}
+.cmp th,.cmp td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+.cmp th:first-child,.cmp td:first-child{text-align:left;color:var(--mut)}
+.cmp tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+.cmp th{color:var(--mut);font-weight:500}
+.cmp th.cur{color:var(--acc2)}
+h3{margin:0 0 8px;font-size:14px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#252b38;border:1px solid var(--line);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1}
+.mobbar{display:none}
+footer{color:var(--mut);font-size:12px;text-align:center;padding:10px 20px 30px}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr;padding:14px}
+  aside{position:static}
+  .mobbar{display:flex;position:sticky;top:0;z-index:5;background:#151923ee;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 14px;justify-content:space-between;align-items:center}
+  .mobbar b{font-size:20px}
+  .opt{grid-template-columns:20px 1fr}
+  .opt .pr{grid-column:2;text-align:left}
+  header{padding:16px 14px 10px}
+}
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff;color:#000;font-size:11px;line-height:1.3}
+  header,.presets,main,.btns,textarea,.mobbar,footer,.noprint{display:none!important}
+  .wrap{display:block;padding:0;max-width:none}
+  aside{position:static}
+  .box{border:0;border-radius:0;padding:0;margin:0 0 10px;color:#000;background:#fff;page-break-inside:avoid}
+  .total{font-size:20px}
+  .total-l{color:#555;font-size:10px}
+  .bd{margin-top:6px;font-size:11px}
+  .bd td{padding:4px 0;border-bottom:1px solid #ddd;color:#000}
+  .bd td:first-child{color:#555;width:70px}
+  .bd .n{color:#000;max-width:none;white-space:normal;overflow:visible;text-overflow:clip;font-size:11px;line-height:1.3}
+  .bd small{display:block;color:#555;font-size:9.5px}
+  .cmp{font-size:10.5px}
+  .cmp th,.cmp td{padding:3px 4px;border-color:#ddd;color:#000}
+  .cmp th,.cmp td:first-child{color:#555}
+  .cmp th.cur{color:#000;font-weight:700}
+  h3{font-size:12px;margin:0 0 4px}
+  .printonly{display:block!important}
+  .printonly h3{font-size:15px;margin-bottom:2px}
+  .printonly p{margin:0 0 8px;color:#555;font-size:10px}
+}
+.printonly{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>PC Toplama Sihirbazı</h1>
+  <p>Kemal için AM5 oyun masaüstü — araştırılan parçalar, fiyatlar ve alternatif build'ler. Fiyatlar 30 Ağustos 2026 itibarıyla, TL.</p>
+</header>
+<noscript><div style="background:#f5b642;color:#000;padding:10px 14px;font-size:13px">Bu görüntüleyici etkileşimi desteklemiyor; aşağıda Build 1 sabit olarak listeleniyor. Parça seçmek için dosyayı Safari/Chrome ile açın (Paylaş → "Safari'de aç" / "Chrome ile aç").</div></noscript>
+<div class="mobbar"><span>Toplam</span><b id="mtotal">—</b></div>
+<div class="wrap">
+<main>
+  <div class="presets" id="presets"></div>
+  <div id="cats"></div>
+</main>
+<aside>
+  <div class="box">
+    <div class="printonly"><h3 id="ptitle">PC Toplama Sihirbazı</h3><p>Kemal için AM5 oyun masaüstü — fiyatlar 30 Ağustos 2026, TL</p></div>
+    <div class="total-l" id="btitle">Seçili build</div>
+    <div class="total" id="total">—</div>
+    <div class="total-l" id="cnt"></div>
+    <table class="bd" id="bd"></table>
+    <div class="btns noprint">
+      <button class="b pri" onclick="exportExcel()">Excel indir</button>
+      <button class="b" onclick="window.print()">PDF / Yazdır</button>
+      <button class="b wa" onclick="shareWA()">WhatsApp'ta paylaş</button>
+      <button class="b" onclick="copySummary()">Özeti kopyala</button>
+    </div>
+  </div>
+  <div class="box noprint">
+    <h3>Notlar / yorum</h3>
+    <textarea id="note" placeholder="Görüşünüzü yazın; paylaşım metnine ve Excel'e eklenir."></textarea>
+  </div>
+  <div class="box">
+    <h3>Build karşılaştırma</h3>
+    <table class="cmp" id="cmp"></table>
+  </div>
+</aside>
+</div>
+<footer>Tek dosya, çevrimdışı çalışır. Fiyatlar satıcı sayfalarından alınmıştır; sipariş öncesi kontrol edin.</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const PARTS = [{"id": 1, "cat": "İşlemci", "name": "AMD Ryzen™ 7 9850X3D Soket AM5 5.6GHz 96MB 120W 4nm Tray Kutusuz İşlemci", "tiers": [1], "price": 24999, "pay": "3 taksit", "seller": "Vatan", "url": "https://www.vatanbilgisayar.com/amd-ryzen-7-9850x3d-soket-am5-5-6ghz-96mb-120w-4nm-tray-kutusuz-islemci.html"}, {"id": 2, "cat": "İşlemci", "name": "AMD Ryzen 7 7800X3D 4.2 GHz AM5 96 MB Cache 120 W İşlemci Tray ( Kutusuz,Fansız)", "tiers": [2, 3], "price": 14850, "pay": "2 taksit", "seller": "Pttavm (DFS)", "url": "https://www.pttavm.com/amd-ryzen-7-7800x3d-4-2-ghz-am5-96-mb-cache-120-w-islemci-tray-kutusuz-fansiz-p-678354506"}, {"id": 3, "cat": "Ekran Kartı", "name": "GIGABYTE VGA NVIDIA 16GB GDDR7 RTX5070TI WINDFORCE OC SFF GV-N507TWF3OC-16GD 256BIT/3XDP/1XHDMI/3XFAN", "tiers": [1], "price": 64964, "pay": "9 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0DTGNB9Q5?_encoding=UTF8&ref=cm_sw_r_cp_ud_dp_83M3WGPRV4S1SCGHE9HP&ref_=cm_sw_r_cp_ud_dp_83M3WGPRV4S1SCGHE9HP&social_share=cm_sw_r_cp_ud_dp_83M3WGPRV4S1SCGHE9HP&th=1"}, {"id": 4, "cat": "Ekran Kartı", "name": "GIGABYTE VGA AMD RADEON 16GB GDDR6 RX 9070 XT GAMING OC Ekran Kartı, GV-R9070XTGAMING OC-16GD", "tiers": [2], "price": 44189, "pay": "9 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0DT7B79K9?_encoding=UTF8&ref=cm_sw_r_cp_ud_dp_JFA167GDQRFNRW1RRVSP&ref_=cm_sw_r_cp_ud_dp_JFA167GDQRFNRW1RRVSP&social_share=cm_sw_r_cp_ud_dp_JFA167GDQRFNRW1RRVSP&th=1"}, {"id": 5, "cat": "Ekran Kartı", "name": "GIGABYTE GeForce RTX™ 5070 WINDFORCE OC 12 GB, 192 Bit, GDDR7, HDMI Ekran Kartı", "tiers": [3], "price": 39899, "pay": "9 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0DTGP2WMT?ref=cm_sw_r_cp_ud_dp_B0DTZKK2FR54R11NTZR9&ref_=cm_sw_r_cp_ud_dp_B0DTZKK2FR54R11NTZR9&social_share=cm_sw_r_cp_ud_dp_B0DTZKK2FR54R11NTZR9&th=1"}, {"id": 6, "cat": "Ana kart", "name": "MSI B850M GAMING PLUS WIFI DDR5 AM5 8200(OC) Mhz mATX Gaming (Oyuncu) Anakart", "tiers": [1, 2, 3], "price": 9989, "pay": "6 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0F9JFMR1R?ref=cm_sw_r_cp_ud_dp_VRPA5VA0RVWE1D470RH2&ref_=cm_sw_r_cp_ud_dp_VRPA5VA0RVWE1D470RH2&social_share=cm_sw_r_cp_ud_dp_VRPA5VA0RVWE1D470RH2&th=1"}, {"id": 7, "cat": "RAM", "name": "CORSAIR Vengeance DDR5 32GB (2 x 16GB) 6000MHz CL38-44-44-96 1.35V Intel XMP 3.0 AMD Expo Bilgisayar Masaüstü Belleği - Gri", "tiers": [1, 2, 3], "price": 23990, "pay": "9 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0G5Q1XTKM?ref=cm_sw_r_cp_ud_dp_P0GGJB1A48TVGV25X2ZH&ref_=cm_sw_r_cp_ud_dp_P0GGJB1A48TVGV25X2ZH&social_share=cm_sw_r_cp_ud_dp_P0GGJB1A48TVGV25X2ZH"}, {"id": 8, "cat": "SSD", "name": "KIOXIA EXCERIA PLUS G4 2TB NVMe SSD – M.2 2280, PCIe Gen5 x4, 10000MB/s Okuma, 8200MB/s Yazma", "tiers": [1], "price": 16953, "pay": "9 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0DW4VQ37J?ref=cm_sw_r_cp_ud_dp_0WAXXPQK7WA26XZH18GY&ref_=cm_sw_r_cp_ud_dp_0WAXXPQK7WA26XZH18GY&social_share=cm_sw_r_cp_ud_dp_0WAXXPQK7WA26XZH18GY&th=1"}, {"id": 9, "cat": "SSD", "name": "KIOXIA EXCERIA BASIC 2TB NVMe SSD – M.2 2280, PCIe Gen4 x4, 7300MB/s Okuma, 6800MB/s Yazma", "tiers": [2], "price": 14393, "pay": "9 taksit", "seller": "Amazon (tebilon)", "url": "https://www.amazon.com.tr/dp/B0FXG7G7RH?ref=cm_sw_r_cp_ud_dp_SX3A2731KC63SHB8CBCD&ref_=cm_sw_r_cp_ud_dp_SX3A2731KC63SHB8CBCD&social_share=cm_sw_r_cp_ud_dp_SX3A2731KC63SHB8CBCD&th=1"}, {"id": 10, "cat": "SSD", "name": "KIOXIA EXCERIA PRO G2 1TB NVMe SSD – M.2 2280, PCIe Gen5 x4, 14400MB/s Okuma, 12700MB/s Yazma", "tiers": [3], "price": 11799, "pay": "9 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0GD694BJP?ref=cm_sw_r_cp_ud_dp_SWR8B0KN9PR6NPDVTQTG&ref_=cm_sw_r_cp_ud_dp_SWR8B0KN9PR6NPDVTQTG&social_share=cm_sw_r_cp_ud_dp_SWR8B0KN9PR6NPDVTQTG&th=1"}, {"id": 11, "cat": "Kasa", "name": "COOLER MASTER MASTERBOX TD500 V2 TG 850W 80 PLUS GOLD MESH 4x120mm ARGB ATX SİYAH KASA", "tiers": [1], "price": 11459, "pay": "3 taksit", "seller": "Vatan", "url": "https://www.vatanbilgisayar.com/cooler-master-masterbox-td500-v2-tg-850w-80-plus-gold-mesh-4x120mm-argb-atx-siyah-kasa.html"}, {"id": 12, "cat": "Kasa", "name": "MSI MAG FORGE 151A B75 PCIE5 II Temperli Cam 6 x120mm Auto RGB Fan 750W Bronz ATX Gaming Bilgisayar Kasası", "tiers": [2, 3], "price": 4799, "pay": "3 taksit", "seller": "Amazon", "url": "https://www.amazon.com.tr/dp/B0H75LRSL2?ref=cm_sw_r_cp_ud_dp_B6E9V427NC3KAPA4K0BM&ref_=cm_sw_r_cp_ud_dp_B6E9V427NC3KAPA4K0BM&social_share=cm_sw_r_cp_ud_dp_B6E9V427NC3KAPA4K0BM"}, {"id": 13, "cat": "Soğutucu", "name": "Thermaltake LA240-S LCD CL-W461-PL12SW-A ARGB 240mm AM5/1851p Uyumlu İşlemci Sıvı Soğutucu", "tiers": [1, 2], "price": 4539, "pay": "3 taksit", "seller": "incehesap", "url": "https://www.incehesap.com/thermaltake-la240-s-lcd-argb-240mm-am5-1851p-uyumlu-islemci-sivi-sogutucu-fiyati-85245/"}, {"id": 14, "cat": "Soğutucu", "name": "Thermaltake LA240 ARGB Led Fanlı 240mm İntel 1851/ AM5 Uyumlu Sıvı Soğutma Sistemi (CL-W457-PL12SW-A)", "tiers": [3], "price": 3949, "pay": "3 taksit", "seller": "Hepsiburada", "url": "https://www.hepsiburada.com/thermaltake-la240-argb-led-fanli-240mm-intel-1851-am5-uyumlu-sivi-sogutma-sistemi-cl-w457-pl12sw-a-p-HBCV00009J3YJA?magaza=Hepsiburada&utm_source=akakce&utm_medium=cpc&utm_campaign=sc%3Ahb-ecom.sr%3Aakakce.md%3Apricecomp&utm_content=agnm%3Ahb&wt_pc=akakce&adj_t=1fmpah5v_1fmqteof&adj_campaign=akakce&mwebtoapp=1&v=1.36.3"}, {"id": 15, "cat": "Monitor", "name": "Lenovo Legion 27Q-10 27 0.5ms 240Hz IPS Wled Pivot Gaming Monitor 68C6GAC4TK", "tiers": [1, 2, 3], "price": 9136, "pay": "6 taksit", "seller": "Hepsiburada (sepetist)", "url": "https://www.hepsiburada.com/lenovo-legion-27q-10-27-0-5ms-240hz-ips-wled-pivot-gaming-monitor-68c6gac4tk-p-HBCV0000AUUR6O?magaza=Sepetist&utm_source=akakce&utm_medium=cpc&utm_campaign=sc%3Ahb-ecom.sr%3Aakakce.md%3Apricecomp&utm_content=agnm%3Ahb&wt_pc=akakce&adj_t=1fmpah5v_1fmqteof&adj_campaign=akakce&mwebtoapp=1&v=1.28.9"}, {"id": 16, "cat": "Klavye", "name": "LOGITECH G515 LIGHTSPEED TKL TÜRKÇE KABLOSUZ OYUNCU KLAVYESİ-SİYAH", "tiers": [1], "price": 7109, "pay": "6 taksit", "seller": "Hepsiburada (vatanbilgisayar)", "url": "https://www.hepsiburada.com/logitech-g-g515-lightspeed-tkl-tactile-kablosuz-dusuk-profilli-analog-turkce-q-oyuncu-klavyesi-siyah-p-HBCV0000EDXQYM?magaza=VATAN%20BİLGİSAYAR&utm_source=akakce&utm_medium=cpc&utm_campaign=sc%3Ahb-ecom.sr%3Aakakce.md%3Apricecomp&utm_content=agnm%3Ahb&wt_pc=akakce&adj_t=1fmpah5v_1fmqteof&adj_campaign=akakce&mwebtoapp=1&v=1.79.3"}, {"id": 17, "cat": "Klavye", "name": "MSI FORGE GK600 TKL WIRELESS SKY TR RGB Mekanik Gaming (Oyuncu) Klavye", "tiers": [2, 3], "price": 3659, "pay": "3 taksit", "seller": "Trendyol (overgame)", "url": "https://www.trendyol.com/msi/forge-gk600-tkl-wireless-sky-tr-rgb-mekanik-gaming-oyuncu-klavye-p-978765156?merchantId=2200&utm_source=aff_t&utm_medium=cpc&utm_campaign=akakce_urun_listeleme&adjust_tracker=ejav2ha_253g15b&adjust_campaign=akakce_urun_listeleme"}];
+const CATS = ['İşlemci','Ekran Kartı','Ana kart','RAM','SSD','Kasa','Soğutucu','Monitor','Klavye'];
+const OPTIONAL = new Set(['Monitor','Klavye','Soğutucu']);
+const TIERS = {
+  1:{name:'Build 1',sub:'Üst seviye',cls:'b1'},
+  2:{name:'Build 2',sub:'Dengeli',cls:'b2'},
+  3:{name:'Build 3',sub:'Ekonomik',cls:'b3'},
+};
+const fmt = n => n.toLocaleString('tr-TR') + ' ₺';
+const byCat = c => PARTS.filter(p=>p.cat===c);
+function tierSel(t){ const s={}; CATS.forEach(c=>{ const p=byCat(c).find(p=>p.tiers.includes(t)); s[c]=p?p.id:null; }); return s; }
+function totalOf(sel){ return CATS.reduce((a,c)=>{const p=PARTS.find(p=>p.id===sel[c]); return a+(p?p.price:0);},0); }
+
+let sel = tierSel(1), cur = 1;
+try{ const s=localStorage.getItem('pcs_sel'); if(s){ sel=JSON.parse(s); cur=+localStorage.getItem('pcs_cur')||0; } }catch(e){}
+
+function curName(){ return cur? `${TIERS[cur].name} · ${TIERS[cur].sub}` : 'Özel build'; }
+function detectTier(){ for(const t of [1,2,3]){ const ts=tierSel(t); if(CATS.every(c=>ts[c]===sel[c])) return t; } return 0; }
+
+function renderPresets(){
+  const el=document.getElementById('presets'); el.innerHTML='';
+  [1,2,3].forEach(t=>{
+    const b=document.createElement('button'); b.className='preset'+(cur===t?' active':'');
+    b.innerHTML=`<span><span class="badge ${TIERS[t].cls}">${TIERS[t].name}</span> ${TIERS[t].sub}</span><small>${fmt(totalOf(tierSel(t)))}</small>`;
+    b.onclick=()=>{ sel=tierSel(t); cur=t; render(); }; el.appendChild(b);
+  });
+  const b=document.createElement('button'); b.className='preset'+(cur===0?' active':'');
+  b.innerHTML=`<span>Özel build</span><small>${cur===0?fmt(totalOf(sel)):'Aşağıdan parça seçin'}</small>`;
+  b.onclick=()=>{ cur=0; render(); }; el.appendChild(b);
+}
+function renderCats(){
+  const root=document.getElementById('cats'); root.innerHTML='';
+  CATS.forEach(c=>{
+    const d=document.createElement('div'); d.className='cat';
+    const chosen=PARTS.find(p=>p.id===sel[c]);
+    d.innerHTML=`<div class="cat-h"><h2>${c}</h2><span class="sel">${chosen?fmt(chosen.price):'dahil değil'}</span></div>`;
+    byCat(c).forEach(p=>{
+      const o=document.createElement('label'); o.className='opt'+(sel[c]===p.id?' on':'');
+      o.innerHTML=`<input type="radio" name="c_${c}" ${sel[c]===p.id?'checked':''}>
+        <div><div class="nm">${p.name}</div>
+        <div class="meta">${p.tiers.map(t=>`<span class="badge ${TIERS[t].cls}">${TIERS[t].name}</span>`).join('')}
+        <span>${p.seller}</span><span>${p.pay}</span><a href="${p.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">ürün sayfası ↗</a></div></div>
+        <div class="pr">${fmt(p.price)}</div>`;
+      o.querySelector('input').onchange=()=>{ sel[c]=p.id; cur=detectTier(); render(); };
+      d.appendChild(o);
+    });
+    if(OPTIONAL.has(c)){
+      const o=document.createElement('label'); o.className='opt skip'+(sel[c]===null?' on':'');
+      o.innerHTML=`<input type="radio" name="c_${c}" ${sel[c]===null?'checked':''}><div class="nm">Bu kategoriyi dahil etme</div><div class="pr">0 ₺</div>`;
+      o.querySelector('input').onchange=()=>{ sel[c]=null; cur=detectTier(); render(); };
+      d.appendChild(o);
+    }
+    root.appendChild(d);
+  });
+}
+function renderSide(){
+  const tot=totalOf(sel);
+  document.getElementById('total').textContent=fmt(tot);
+  document.getElementById('mtotal').textContent=fmt(tot);
+  document.getElementById('btitle').textContent=curName();
+  const n=CATS.filter(c=>sel[c]).length;
+  document.getElementById('cnt').textContent=`${n} parça`;
+  document.getElementById('bd').innerHTML=CATS.map(c=>{const p=PARTS.find(p=>p.id===sel[c]);
+    return `<tr><td>${c}</td><td><span class="n" title="${p?p.name:''}">${p?p.name:'—'}</span>${p?`<small>${p.seller} · ${p.pay}</small>`:''}</td><td>${p?fmt(p.price):'—'}</td></tr>`;}).join('');
+  // comparison
+  const cols=[1,2,3].map(t=>({h:TIERS[t].name,s:tierSel(t),cur:cur===t}));
+  if(cur===0) cols.push({h:'Özel',s:sel,cur:true});
+  let h='<tr><th></th>'+cols.map(c=>`<th class="${c.cur?'cur':''}">${c.h}</th>`).join('')+'</tr>';
+  CATS.forEach(c=>{ h+=`<tr><td>${c}</td>`+cols.map(col=>{const p=PARTS.find(p=>p.id===col.s[c]);return `<td>${p?p.price.toLocaleString('tr-TR'):'—'}</td>`;}).join('')+'</tr>'; });
+  h+='<tr class="tot"><td>Toplam</td>'+cols.map(col=>`<td>${totalOf(col.s).toLocaleString('tr-TR')}</td>`).join('')+'</tr>';
+  document.getElementById('cmp').innerHTML=h;
+}
+function render(){ renderPresets(); renderCats(); renderSide(); try{localStorage.setItem('pcs_sel',JSON.stringify(sel));localStorage.setItem('pcs_cur',cur);}catch(e){} }
+
+function rows(){ return CATS.map(c=>{const p=PARTS.find(p=>p.id===sel[c]); return p?{Bileşen:c,Ürün:p.name,Fiyat:p.price,'Ödeme':p.pay,Satıcı:p.seller,Link:p.url}:{Bileşen:c,Ürün:'—',Fiyat:0,'Ödeme':'',Satıcı:'',Link:''};}); }
+function summary(){
+  const note=document.getElementById('note').value.trim();
+  let s=`🖥️ ${curName()} — Toplam ${fmt(totalOf(sel))}\n\n`;
+  CATS.forEach(c=>{const p=PARTS.find(p=>p.id===sel[c]); s+=p?`• ${c}: ${p.name} — ${fmt(p.price)} (${p.seller}, ${p.pay})\n`:`• ${c}: dahil değil\n`;});
+  if(note) s+=`\n📝 Not: ${note}\n`;
+  return s;
+}
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function shareWA(){
+  const t=summary();
+  if(navigator.share && /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)){ navigator.share({text:t}).catch(()=>{}); return; }
+  navigator.clipboard && navigator.clipboard.writeText(t).catch(()=>{});
+  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+  toast('Özet panoya da kopyalandı — WhatsApp boş açılırsa yapıştırın');
+}
+function copySummary(){ navigator.clipboard.writeText(summary()).then(()=>toast('Özet panoya kopyalandı')).catch(()=>{prompt('Kopyalayın:',summary());}); }
+function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); }
+function exportExcel(){
+  const name='pc-build-'+(cur||'ozel')+'.xlsx';
+  const build=()=>{
+    const wb=XLSX.utils.book_new();
+    const r=rows(); r.push({Bileşen:'TOPLAM',Ürün:'',Fiyat:totalOf(sel)});
+    const note=document.getElementById('note').value.trim(); if(note) r.push({Bileşen:'Not',Ürün:note});
+    const ws=XLSX.utils.json_to_sheet(r); ws['!cols']=[{wch:12},{wch:70},{wch:10},{wch:10},{wch:22},{wch:40}];
+    XLSX.utils.book_append_sheet(wb,ws,curName().slice(0,30));
+    const all=PARTS.map(p=>({Bileşen:p.cat,Ürün:p.name,'Build':p.tiers.join(','),Fiyat:p.price,'Ödeme':p.pay,Satıcı:p.seller,Link:p.url}));
+    const ws2=XLSX.utils.json_to_sheet(all); ws2['!cols']=[{wch:12},{wch:70},{wch:7},{wch:10},{wch:10},{wch:22},{wch:40}];
+    XLSX.utils.book_append_sheet(wb,ws2,'Tüm parçalar');
+    XLSX.writeFile(wb,name); toast('Excel indirildi');
+  };
+  if(window.XLSX) return build();
+  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=build; s.onerror=()=>{ // çevrimdışı: CSV
+    const r=rows(); let csv='﻿Bileşen;Ürün;Fiyat;Ödeme;Satıcı;Link\n';
+    r.forEach(x=>csv+=[x.Bileşen,x.Ürün,x.Fiyat,x.Ödeme,x.Satıcı,x.Link].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')+'\n');
+    csv+=`"TOPLAM";"";${totalOf(sel)}\n`;
+    dl(new Blob([csv],{type:'text/csv;charset=utf-8'}),name.replace('.xlsx','.csv')); toast('İnternet yok: CSV olarak indirildi');
+  };
+  document.head.appendChild(s);
+}
+render();
+</script>
+</body>
+</html>
