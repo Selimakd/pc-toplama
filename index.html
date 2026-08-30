@@ -154,7 +154,7 @@ function tierSel(t){ const s={}; CATS.forEach(c=>{ const p=byCat(c).find(p=>p.ti
 function totalOf(sel){ return CATS.reduce((a,c)=>{const p=PARTS.find(p=>p.id===sel[c]); return a+(p?p.price:0);},0); }
 
 let sel = tierSel(1), cur = 1;
-try{ const s=localStorage.getItem('pcs_sel'); if(s){ sel=JSON.parse(s); cur=+localStorage.getItem('pcs_cur')||0; } }catch(e){}
+try{ const s=localStorage.getItem('pcs_sel_v2'); if(s){ sel=JSON.parse(s); cur=+localStorage.getItem('pcs_cur_v2')||0; } }catch(e){}
 
 function curName(){ return cur? `${TIERS[cur].name} · ${TIERS[cur].sub}` : 'Özel build'; }
 function detectTier(){ for(const t of TIER_IDS){ const ts=tierSel(t); if(CATS.every(c=>ts[c]===sel[c])) return t; } return 0; }
@@ -212,7 +212,7 @@ function renderSide(){
   h+='<tr class="tot"><td>Toplam</td>'+cols.map(col=>`<td>${totalOf(col.s).toLocaleString('tr-TR')}</td>`).join('')+'</tr>';
   document.getElementById('cmp').innerHTML=h;
 }
-function render(){ renderPresets(); renderCats(); renderSide(); try{localStorage.setItem('pcs_sel',JSON.stringify(sel));localStorage.setItem('pcs_cur',cur);}catch(e){} }
+function render(){ renderPresets(); renderCats(); renderSide(); try{localStorage.setItem('pcs_sel_v2',JSON.stringify(sel));localStorage.setItem('pcs_cur_v2',cur);}catch(e){} }
 
 function rows(){ return CATS.map(c=>{const p=PARTS.find(p=>p.id===sel[c]); return p?{Bileşen:c,Ürün:p.name,Fiyat:p.price,'Ödeme':p.pay,Satıcı:p.seller,Link:p.url}:{Bileşen:c,Ürün:'—',Fiyat:0,'Ödeme':'',Satıcı:'',Link:''};}); }
 function summary(){
