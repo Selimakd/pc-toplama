@@ -233,7 +233,7 @@ function renderCmp(){
   const saves=window.__saves||[];
   const el=document.getElementById('cmp');
   if(!saves.length){el.innerHTML='<tr><td class="savemsg" style="border:0">Karşılaştırma için build kaydedin; kayıtlı build\'ler burada yan yana görünür.</td></tr>';return;}
-  const cols=saves.map(e=>({h:esc(e.nm),s:normSel(e.sel)}));
+  const cols=saves.map(e=>({h:esc(e.nm),s:normSel(e.sel)})).sort((a,b)=>totalOf(b.s)-totalOf(a.s));
   cols.push({h:'Seçili',s:sel,cur:true});
   let h='<tr><th></th>'+cols.map(c=>`<th class="${c.cur?'cur':''}">${c.h}</th>`).join('')+'</tr>';
   CATS.forEach(c=>{ h+=`<tr><td>${c}</td>`+cols.map(col=>{const p=PARTS.find(p=>p.id===col.s[c]);return `<td>${p?p.price.toLocaleString('tr-TR'):'—'}</td>`;}).join('')+'</tr>'; });
