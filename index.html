@@ -151,8 +151,8 @@ footer{color:var(--mut);font-size:12px;text-align:center;padding:10px 20px 30px}
     <div id="savelist" class="savemsg">Kayıtlar yükleniyor…</div>
   </div>
   <div class="box noprint">
-    <h3>Build karşılaştırma</h3>
-    <table class="cmp" id="cmp"></table>
+    <h3>Kayıtlı build karşılaştırması</h3>
+    <div style="overflow-x:auto"><table class="cmp" id="cmp"></table></div>
   </div>
 </aside>
 </div>
@@ -226,13 +226,19 @@ function renderSide(){
   document.getElementById('cnt').textContent=`${n} parça`;
   document.getElementById('bd').innerHTML=CATS.map(c=>{const p=PARTS.find(p=>p.id===sel[c]);
     return `<tr><td>${c}</td><td><span class="n" title="${p?p.name:''}">${p?p.name:'—'}</span>${p?`<small>${p.seller} · ${p.pay}</small>`:''}</td><td>${p?fmt(p.price):'—'}</td></tr>`;}).join('');
-  // comparison
-  const cols=TIER_IDS.map(t=>({h:TIERS[t].name,s:tierSel(t),cur:cur===t}));
-  if(cur===0) cols.push({h:'Özel',s:sel,cur:true});
+  renderCmp();
+}
+function normSel(raw){const s={};CATS.forEach(c=>{const pid=raw&&raw[c];s[c]=(pid&&PARTS.find(p=>p.id===pid))?pid:null;});return s;}
+function renderCmp(){
+  const saves=window.__saves||[];
+  const el=document.getElementById('cmp');
+  if(!saves.length){el.innerHTML='<tr><td class="savemsg" style="border:0">Karşılaştırma için build kaydedin; kayıtlı build\'ler burada yan yana görünür.</td></tr>';return;}
+  const cols=saves.map(e=>({h:esc(e.nm),s:normSel(e.sel)}));
+  cols.push({h:'Seçili',s:sel,cur:true});
   let h='<tr><th></th>'+cols.map(c=>`<th class="${c.cur?'cur':''}">${c.h}</th>`).join('')+'</tr>';
   CATS.forEach(c=>{ h+=`<tr><td>${c}</td>`+cols.map(col=>{const p=PARTS.find(p=>p.id===col.s[c]);return `<td>${p?p.price.toLocaleString('tr-TR'):'—'}</td>`;}).join('')+'</tr>'; });
   h+='<tr class="tot"><td>Toplam</td>'+cols.map(col=>`<td>${totalOf(col.s).toLocaleString('tr-TR')}</td>`).join('')+'</tr>';
-  document.getElementById('cmp').innerHTML=h;
+  el.innerHTML=h;
 }
 function render(){ renderPresets(); renderCats(); renderSide(); try{localStorage.setItem('pcs_sel_v3',JSON.stringify(sel));localStorage.setItem('pcs_cur_v3',cur);}catch(e){} }
 
@@ -283,13 +289,15 @@ async function fetchSaves(){const r=await fetch(STORE,{cache:'no-store'});if(!r.
 async function putSaves(b){const r=await fetch(STORE,{method:'PUT',body:JSON.stringify(b)});if(!r.ok)throw 0;}
 function renderSaves(list){
   const el=document.getElementById('savelist');
-  if(!list.length){el.className='savemsg';el.textContent='Henüz kayıtlı build yok. İlk kaydı siz yapın!';return;}
+  window.__saves=list;
+  if(!list.length){el.className='savemsg';el.textContent='Henüz kayıtlı build yok. İlk kaydı siz yapın!';renderCmp();return;}
   el.className='';
   el.innerHTML=[...list].reverse().map(e=>{
     const t=totalOf(Object.fromEntries(CATS.map(c=>[c,(e.sel[c]&&PARTS.find(p=>p.id===e.sel[c]))?e.sel[c]:null])));
-    return `<div class="sv"><div class="si"><div class="sn">${esc(e.nm)}</div><div class="sm">${esc(e.who)} · ${esc(e.date)} · ${fmt(t)}</div></div><div class="sb"><button onclick="applySave('${e.id}')">Yükle</button><button class="del" data-id="${e.id}" onclick="delSave(this)">Sil</button></div></div>`;
+    return `<div class="sv"><div class="si"><div class="sn">${esc(e.nm)}</div><div class="sm">${esc(e.who)} · ${esc(e.date)} · ${fmt(t)}</div></div><div class="sb"><button onclick="applySave('${e.id}')">Yükle</button><button data-id="${e.id}" onclick="updSave(this)">Güncelle</button><button class="del" data-id="${e.id}" onclick="delSave(this)">Sil</button></div></div>`;
   }).join('');
   window.__saves=list;
+  renderCmp();
 }
 async function loadSaves(){try{renderSaves(await fetchSaves());}catch(e){const el=document.getElementById('savelist');el.className='savemsg';el.textContent='Kayıtlar yüklenemedi — sayfayı yenileyin.';}}
 async function saveBuild(){
@@ -305,6 +313,17 @@ function applySave(id){const e=(window.__saves||[]).find(x=>x.id===id);if(!e)ret
   sel=s;cur=detectTier();render();
   document.getElementById('total').scrollIntoView({behavior:'smooth',block:'nearest'});
   toast(`"${e.nm}" yüklendi`);}
+async function updSave(btn){
+  if(btn.dataset.arm!=='1'){btn.dataset.arm='1';btn.textContent='Üzerine yaz?';setTimeout(()=>{btn.dataset.arm='';btn.textContent='Güncelle';},2500);return;}
+  const id=btn.dataset.id;
+  const who=document.getElementById('sv_who').value.trim(), nm=document.getElementById('sv_name').value.trim();
+  try{
+    const b=await fetchSaves(); const e=b.find(x=>x.id===id);
+    if(!e){toast('Kayıt bulunamadı (silinmiş olabilir)');renderSaves(b);return;}
+    e.sel={...sel}; if(nm)e.nm=nm; if(who)e.who=who; e.date=new Date().toLocaleDateString('tr-TR');
+    await putSaves(b); renderSaves(b); document.getElementById('sv_name').value=''; toast(`"${e.nm}" güncellendi`);
+  }catch(err){toast('Güncellenemedi — tekrar deneyin');}
+}
 async function delSave(btn){
   if(btn.dataset.arm!=='1'){btn.dataset.arm='1';btn.textContent='Emin misin?';setTimeout(()=>{btn.dataset.arm='';btn.textContent='Sil';},2500);return;}
   const id=btn.dataset.id;
