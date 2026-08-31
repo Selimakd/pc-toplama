@@ -59,6 +59,19 @@ textarea{width:100%;min-height:70px;background:var(--bg);color:var(--txt);border
 .cmp th{color:var(--mut);font-weight:500}
 .cmp th.cur{color:var(--acc2)}
 h3{margin:0 0 8px;font-size:14px}
+.saveform{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.saveform input{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;min-width:0}
+.saveform button{grid-column:1/3}
+.sv{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.sv:last-child{border-bottom:0}
+.sv .si{min-width:0}
+.sv .sn{font-weight:600}
+.sv .sm{color:var(--mut);font-size:12px}
+.sv .sb{display:flex;gap:6px;flex-shrink:0}
+.sv button{border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:5px 10px;border-radius:7px;cursor:pointer;font-size:12px}
+.sv button:hover{border-color:var(--acc)}
+.sv button.del:hover{border-color:var(--t1);color:var(--t1)}
+.savemsg{color:var(--mut);font-size:13px}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#252b38;border:1px solid var(--line);padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 .mobbar{display:none}
@@ -127,6 +140,15 @@ footer{color:var(--mut);font-size:12px;text-align:center;padding:10px 20px 30px}
   <div class="box noprint">
     <h3>Notlar / yorum</h3>
     <textarea id="note" placeholder="Görüşünüzü yazın; paylaşım metnine ve Excel'e eklenir."></textarea>
+  </div>
+  <div class="box noprint">
+    <h3>Kaydedilen build'ler</h3>
+    <div class="saveform">
+      <input id="sv_who" placeholder="Adınız" maxlength="30">
+      <input id="sv_name" placeholder="Build adı" maxlength="40">
+      <button class="b pri" onclick="saveBuild()">Bu build'i kaydet</button>
+    </div>
+    <div id="savelist" class="savemsg">Kayıtlar yükleniyor…</div>
   </div>
   <div class="box noprint">
     <h3>Build karşılaştırma</h3>
@@ -255,7 +277,43 @@ function exportExcel(){
   };
   document.head.appendChild(s);
 }
+const STORE='https://getpantry.cloud/apiv1/pantry/a4f86e7b-ed50-4fae-a928-9e3be88f129e/basket/builds';
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function fetchSaves(){const r=await fetch(STORE,{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();return Array.isArray(j.builds)?j.builds:[];}
+async function putSaves(b){const r=await fetch(STORE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({builds:b})});if(!r.ok)throw 0;}
+function renderSaves(list){
+  const el=document.getElementById('savelist');
+  if(!list.length){el.className='savemsg';el.textContent='Henüz kayıtlı build yok. İlk kaydı siz yapın!';return;}
+  el.className='';
+  el.innerHTML=[...list].reverse().map(e=>{
+    const t=totalOf(Object.fromEntries(CATS.map(c=>[c,(e.sel[c]&&PARTS.find(p=>p.id===e.sel[c]))?e.sel[c]:null])));
+    return `<div class="sv"><div class="si"><div class="sn">${esc(e.nm)}</div><div class="sm">${esc(e.who)} · ${esc(e.date)} · ${fmt(t)}</div></div><div class="sb"><button onclick="applySave('${e.id}')">Yükle</button><button class="del" data-id="${e.id}" onclick="delSave(this)">Sil</button></div></div>`;
+  }).join('');
+  window.__saves=list;
+}
+async function loadSaves(){try{renderSaves(await fetchSaves());}catch(e){const el=document.getElementById('savelist');el.className='savemsg';el.textContent='Kayıtlar yüklenemedi — sayfayı yenileyin.';}}
+async function saveBuild(){
+  const who=document.getElementById('sv_who').value.trim(), nm=document.getElementById('sv_name').value.trim();
+  if(!who||!nm){toast('Adınızı ve build adını yazın');return;}
+  try{localStorage.setItem('pcs_who',who);}catch(e){}
+  const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),who,nm,sel:{...sel},date:new Date().toLocaleDateString('tr-TR')};
+  try{const b=await fetchSaves();b.push(entry);await putSaves(b);renderSaves(b);document.getElementById('sv_name').value='';toast('Build kaydedildi');}
+  catch(e){toast('Kaydedilemedi — bağlantıyı kontrol edip tekrar deneyin');}
+}
+function applySave(id){const e=(window.__saves||[]).find(x=>x.id===id);if(!e)return;
+  const s={};CATS.forEach(c=>{const pid=e.sel[c];s[c]=(pid&&PARTS.find(p=>p.id===pid))?pid:null;});
+  sel=s;cur=detectTier();render();
+  document.getElementById('total').scrollIntoView({behavior:'smooth',block:'nearest'});
+  toast(`"${e.nm}" yüklendi`);}
+async function delSave(btn){
+  if(btn.dataset.arm!=='1'){btn.dataset.arm='1';btn.textContent='Emin misin?';setTimeout(()=>{btn.dataset.arm='';btn.textContent='Sil';},2500);return;}
+  const id=btn.dataset.id;
+  try{const b=(await fetchSaves()).filter(x=>x.id!==id);await putSaves(b);renderSaves(b);toast('Kayıt silindi');}
+  catch(e){toast('Silinemedi — tekrar deneyin');}
+}
+try{const w=localStorage.getItem('pcs_who');if(w)document.getElementById('sv_who').value=w;}catch(e){}
 render();
+loadSaves();
 </script>
 </body>
 </html>
