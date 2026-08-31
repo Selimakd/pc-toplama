@@ -277,10 +277,10 @@ function exportExcel(){
   };
   document.head.appendChild(s);
 }
-const STORE='https://getpantry.cloud/apiv1/pantry/a4f86e7b-ed50-4fae-a928-9e3be88f129e/basket/builds';
+const STORE='https://pc-toplama-1f1bb-default-rtdb.europe-west1.firebasedatabase.app/builds.json';
 function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function fetchSaves(){const r=await fetch(STORE,{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();return Array.isArray(j.builds)?j.builds:[];}
-async function putSaves(b){const r=await fetch(STORE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({builds:b})});if(!r.ok)throw 0;}
+async function fetchSaves(){const r=await fetch(STORE,{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();return Array.isArray(j)?j:[];}
+async function putSaves(b){const r=await fetch(STORE,{method:'PUT',body:JSON.stringify(b)});if(!r.ok)throw 0;}
 function renderSaves(list){
   const el=document.getElementById('savelist');
   if(!list.length){el.className='savemsg';el.textContent='Henüz kayıtlı build yok. İlk kaydı siz yapın!';return;}
